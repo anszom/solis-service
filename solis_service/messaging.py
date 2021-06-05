@@ -19,19 +19,34 @@ def parse_header(msghdr):
     }
 
 def parse_inverter_message(message):
+    [   flags, timestamp,
+        serialno, temp, pv1_v, pv2_v, pv1_i, pv2_i,
+        ac1_i, ac2_i, ac3_i, ac1_v, ac2_v, ac3_v, ac_hz,
+        ac_pwr, daily_wh, total_wh, runtime, status,
+        swver, hwver, modtemp, bus_v, cpu_v, countdown,
+        inputmode, pv1_r, pv2_r, imp, ctry, ind1_i, ct_w,
+        leakage_i, a_dist, b_dist, c_dist, vdspver, dspver,
+        yy, mm, dd, h, m, s ] = unpack_from(
+                "<BxxIxxxxxxxxxxxxxx16shHHHHHHHHHHHIIIIH4s4sHHHxxHHHHHHHHHHHH4s4sBBBBBBxxxx",
+                message, 11);
     return {
-        "inverter_serial_number":           message[32:48].decode("ascii").rstrip(),
-        "inverter_temperature":             0.1 * unpack_from("<H", message, 48)[0] * ureg.centigrade,
-        "dc_voltage_pv1":                   0.1 * unpack_from("<H", message, 50)[0] * ureg.volt,  # could also be 52
-        "dc_current":                       0.1 * unpack_from("<H", message, 54)[0] * ureg.amperes,
-        "ac_current_t_w_c":                 0.1 * unpack_from("<H", message, 62)[0] * ureg.amperes,
-        "ac_voltage_t_w_c":                 0.1 * unpack_from("<H", message, 68)[0] * ureg.volt,
-        "ac_output_frequency":              0.01 * unpack_from("<H", message, 70)[0] * ureg.hertz,
-        "daily_active_generation":          0.01 * unpack_from("<H", message, 76)[0] * ureg.kilowatt_hour,
-        "total_dc_input_power":             float(unpack_from("<I", message, 116)[0]) * ureg.watts,
-        "total_active_generation":          float(unpack_from("<I", message, 120)[0]) * ureg.kilowatt_hour,  # or 130
-        "generation_yesterday":             0.1 * unpack_from("<H", message, 128)[0] * ureg.kilowatt_hour,
-        "power_grid_total_apparent_power":  float(unpack_from("<I", message, 142)[0]) * ureg.volt_ampere,
+        "is_current":                       (flags & 0x80) == 0,
+        "timestamp":                        timestamp,
+        "inverter_serial_number":           serialno.rstrip(),
+        "inverter_temperature":             0.1 * temp * ureg.centigrade,
+        "dc_voltage_pv1":                   0.1 * pv1_v * ureg.volt,
+        "dc_voltage_pv2":                   0.1 * pv2_v * ureg.volt,
+        "dc_current_pv1":                   0.1 * pv1_i * ureg.amperes,
+        "dc_current_pv2":                   0.1 * pv2_i * ureg.amperes,
+        "ac_current_1":                     0.1 * ac1_i * ureg.amperes,
+        "ac_current_2":                     0.1 * ac2_i * ureg.amperes,
+        "ac_current_3":                     0.1 * ac3_i * ureg.amperes,
+        "ac_voltage_1":                     0.1 * ac1_v * ureg.volt,
+        "ac_voltage_2":                     0.1 * ac2_v * ureg.volt,
+        "ac_voltage_3":                     0.1 * ac3_v * ureg.volt,
+        "ac_output_frequency":              0.01 * ac_hz * ureg.hertz,
+        "daily_active_generation":          0.01 * daily_wh * ureg.kilowatt_hour,
+        "total_active_generation":          0.1 * total_wh * ureg.kilowatt_hour,
     }
 
 
